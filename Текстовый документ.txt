@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Market Armenia</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logo { font-size: 20px; font-weight: bold; color: #2563eb; }
+        .btn { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #1d4ed8; }
+        .container { max-width: 1000px; margin: 20px auto; }
+        .search-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; gap: 10px; }
+        .search-box input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card-body { padding: 15px; flex: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+        .card-price { font-size: 20px; color: #2563eb; font-weight: bold; margin-bottom: 10px; }
+        .card-details { font-size: 14px; color: #555; margin-bottom: 10px; }
+        .card-phone { margin-top: auto; background: #e2e8f0; padding: 8px; text-align: center; border-radius: 5px; font-weight: bold; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-content input, .modal-content select { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .close { float: right; cursor: pointer; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Auto Market Armenia</div>
+        <button class="btn" onclick="openModal()">+ Ավելացնել Հայտարարություն</button>
+    </header>
+
+    <div class="container">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Որոնել մակնիշը (օր. Toyota, BMW...)" oninput="filterCars()">
+        </div>
+
+        <div class="grid" id="carGrid">
+            <p style="grid-column: 1/-1; text-align: center; color: #666;">Բեռնվում է...</p>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="carModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Նոր մեքենա</h3>
+            <form onsubmit="addCar(event)">
+                <label>Մակնիշ և Մոդել</label>
+                <input type="text" id="title" placeholder="Օր. Toyota Camry" required>
+                
+                <label>Գին ($)</label>
+                <input type="number" id="price" placeholder="Օր. 12000" required>
+                
+                <label>Տարեթիվ</label>
+                <input type="number" id="year" placeholder="Օր. 2015" required>
+                
+                <label>Վազք</label>
+                <input type="text" id="mileage" placeholder="Օր. 140,000 կմ" required>
+                
+                <label>Գտնվելու վայրը</label>
+                <input type="text" id="location" placeholder="Օր. Երևան" required>
+
+                <label>Ընտրել նկար պատկերասրահից</label>
+                <input type="file" id="carImageFile" accept="image/*" required>
+                
+                <label>Հեռախոսահամար</label>
+                <input type="text" id="phone" placeholder="Օր. +374 91 123456" required>
+                
+                <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Տեղադրել</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Նախնական կամ պահպանված տվյալներ
+        let cars = JSON.parse(localStorage.getItem('am_cars')) || [
+            {
+                title: "Toyota Camry",
+                price: 14500,
+                year: 2016,
+                mileage: "120,000 կմ",
+                location: "Երևան",
+                image: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=600&q=80",
+                phone: "+374 91 123456"
+            }
+        ];
+
+        function renderCars(data) {
+            const grid = document.getElementById('carGrid');
+            grid.innerHTML = '';
+            
+            if (data.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Հայտարարություններ չկան</p>';
+                return;
+            }
+
+            data.forEach(car => {
+                grid.innerHTML += `
+                    <div class="card">
+                        <img src="${car.image}" alt="${car.title}" onerror="this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80'">
+                        <div class="card-body">
+                            <div class="card-title">${car.title} (${car.year})</div>
+                            <div class="card-price">$${car.price.toLocaleString()}</div>
+                            <div class="card-details">
+                                📍 ${car.location} | ⚙️ ${car.mileage}
+                            </div>
+                            <div class="card-phone">📞 ${car.phone}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterCars() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = cars.filter(c => c.title.toLowerCase().includes(query));
+            renderCars(filtered);
+        }
+
+        function openModal() {
+            document.getElementById('carModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('carModal').style.display = 'none';
+        }
+
+        function addCar(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('carImageFile');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const newCar = {
+                        title: document.getElementById('title').value,
+                        price: Number(document.getElementById('price').value),
+                        year: Number(document.getElementById('year').value),
+                        mileage: document.getElementById('mileage').value,
+                        location: document.getElementById('location').value,
+                        image: event.target.result,
+                        phone: document.getElementById('phone').value
+                    };
+                    
+                    cars.unshift(newCar);
+                    localStorage.setItem('am_cars', JSON.stringify(cars));
+                    renderCars(cars);
+                    closeModal();
+                    e.target.reset();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Սկզբնական բեռնում
+        renderCars(cars);
+    </script>
+</body>
+</html>
