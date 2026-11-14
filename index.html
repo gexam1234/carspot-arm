@@ -4,71 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CarSpot-Arm 🚗 - Հայաստանի ավտոշուկա</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen font-sans">
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col justify-between">
 
-    <!-- Header -->
-    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-40">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-extrabold tracking-wide">CarSpot-Arm 🚗</h1>
-            <button onclick="openAddModal()" class="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-xl text-sm font-bold shadow transition flex items-center gap-1.5">
-                + Ավելացնել մեքենա
-            </button>
+    <div>
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-40">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-wide cursor-pointer" onclick="resetFilters()">CarSpot-Arm 🚗</h1>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleCurrency()" id="currency-btn" class="bg-blue-700 hover:bg-blue-800 text-white px-2.5 py-2 rounded-xl text-xs font-bold transition shadow">
+                        💵 USD ($)
+                    </button>
+                    <button onclick="toggleFavoritesView()" id="fav-toggle-btn" class="bg-blue-700 hover:bg-blue-800 text-white px-2.5 py-2 rounded-xl text-xs font-bold transition shadow flex items-center gap-1">
+                        ❤️ (<span id="fav-count">0</span>)
+                    </button>
+                    <button onclick="openAddModal()" class="bg-white text-blue-600 hover:bg-blue-50 px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold shadow transition flex items-center gap-1">
+                        + Ավելացնել
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-4 mt-2">
+            <!-- Search, Filter & Sort Panel -->
+            <div class="bg-white p-4 rounded-xl shadow-md mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">🔍 Որոնել մոդելով</label>
+                    <input type="text" id="search-input" placeholder="օր. Toyota Camry, BMW..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">📍 Քաղաք</label>
+                    <select id="city-filter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:border-blue-500" onchange="applyFilters()">
+                        <option value="">Բոլոր քաղաքները</option>
+                        <option value="Երևան">Երևան</option>
+                        <option value="Գյումրի">Գյումրի</option>
+                        <option value="Վանաձոր">Վանաձոր</option>
+                        <option value="Էջմիածին">Էջմիածին</option>
+                        <option value="Աբովյան">Աբովյան</option>
+                        <option value="Կապան">Կապան</option>
+                        <option value="Հրազդան">Հրազդան</option>
+                        <option value="Արմավիր">Արմավիր</option>
+                        <option value="Դիլիջան">Դիլիջան</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">⇅ Տեսակավորել</label>
+                    <select id="sort-filter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:border-blue-500" onchange="applyFilters()">
+                        <option value="newest">Նոր ավելացվածները</option>
+                        <option value="price_asc">Գին՝ սկզբում էժանները</option>
+                        <option value="price_desc">Գին՝ սկզբում թանկերը</option>
+                        <option value="year_desc">Տարեթիվ՝ սկզբում նորերը</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="applyFilters()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow">Որոնել</button>
+                </div>
+            </div>
+
+            <!-- Quick Filter Buttons -->
+            <div class="flex gap-2 overflow-x-auto pb-3 mb-4">
+                <button onclick="quickFilter('all')" class="bg-white hover:bg-blue-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-sm">Բոլորը</button>
+                <button onclick="quickFilter('urgent')" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-sm">🔥 Շտապ վաճառք</button>
+                <button onclick="quickFilter('under5k')" class="bg-white hover:bg-blue-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-sm">💰 Մինչև $5,000</button>
+                <button onclick="quickFilter('under10k')" class="bg-white hover:bg-blue-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-sm">💰 Մինչև $10,000</button>
+                <button onclick="quickFilter('hybrid')" class="bg-white hover:bg-blue-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-sm">⚡ Հիբրիդ / Գազ</button>
+            </div>
+
+            <div id="loading" class="text-center py-16 text-gray-500 text-xl font-medium">Տվյալները բեռնվում են...</div>
+            <div id="cars-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </main>
+    </div>
+
+    <!-- Footer with Admin Toggle -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8 text-center text-xs text-gray-500">
+        <div class="container mx-auto flex justify-between items-center px-4">
+            <p>CarSpot-Arm &copy; 2026 | Հայաստանի ավտոշուկա</p>
+            <span onclick="toggleAdminMode()" class="cursor-pointer opacity-40 hover:opacity-100 transition font-bold select-none" id="admin-footer-btn">⚙️ Admin</span>
         </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container mx-auto p-4 mt-4">
-        <!-- Search & Filter Panel (List.am style) -->
-        <div class="bg-white p-4 rounded-xl shadow-md mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">🔍 Որոնել մոդելով / անունով</label>
-                <input type="text" id="search-input" placeholder="օր. Toyota Camry, BMW..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">📍 Քաղաք</label>
-                <select id="city-filter" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 focus:outline-none focus:border-blue-500">
-                    <option value="">Բոլոր քաղաքները</option>
-                    <option value="Երևան">Երևան</option>
-                    <option value="Գյումրի">Գյումրի</option>
-                    <option value="Վանաձոր">Վանաձոր</option>
-                    <option value="Էջմիածին">Էջմիածին</option>
-                    <option value="Աբովյան">Աբովյան</option>
-                    <option value="Կապան">Կապան</option>
-                    <option value="Հրազդան">Հրազդան</option>
-                    <option value="Արմավիր">Արմավիր</option>
-                    <option value="Դիլիջան">Դիլիջան</option>
-                </select>
-            </div>
-            <div class="flex items-end">
-                <button onclick="applyFilters()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition shadow">Ֆիլտրել</button>
-            </div>
-        </div>
-
-        <div id="loading" class="text-center py-16 text-gray-500 text-xl font-medium">Տվյալները բեռնվում են...</div>
-        <div id="cars-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-    </main>
+    </footer>
 
     <!-- Details Modal -->
     <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeDetailsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+            <button onclick="closeDetailsModal()" class="absolute top-3 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold z-10">&times;</button>
             <div id="modal-details-content"></div>
         </div>
     </div>
 
-    <!-- Add Car Modal -->
+    <!-- Add / Edit Car Modal -->
     <div id="carModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Նոր մեքենայի հայտարարություն</h3>
+                <h3 id="modal-form-title" class="text-xl font-bold text-gray-800">Նոր մեքենայի հայտարարություն</h3>
                 <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
             </div>
-            <form id="carForm" onsubmit="addCar(event)" class="space-y-3">
+            <form id="carForm" onsubmit="saveCar(event)" class="space-y-3">
+                <input type="hidden" id="edit-car-id" value="">
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Մակնիշ / Մոդել / Անվանում</label>
                     <input type="text" id="title" required placeholder="օր. Toyota Camry 2.5" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
@@ -100,7 +135,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Շարժիչ</label>
-                        <input type="text" id="engine" placeholder="օր. 2.5 լ, բենզին" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" id="engine" placeholder="օր. 2.5 լ, բենզին/հիբրիդ" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-3">
@@ -117,52 +152,250 @@
                         <input type="number" id="mileage" placeholder="95000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">VIN կոդ (կամընտիր)</label>
+                    <input type="text" id="vin" placeholder="օր. 1G1JC53F..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:outline-none focus:border-blue-500">
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">Հեռախոսահամար</label>
                         <input type="text" id="phone" required placeholder="+374 91 234567" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">PIN (ջնջելու համար)</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">PIN (խմբագրելու / ջնջելու)</label>
                         <input type="text" id="pin" required placeholder="օր. 1234" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Նկարի հղում (URL) <span class="text-gray-400 font-normal">(կամընտիր)</span></label>
-                    <input type="url" id="image" placeholder="https://example.com/car.jpg" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+
+                <!-- Urgent Checkbox -->
+                <div class="flex items-center gap-2 bg-red-50 p-2.5 rounded-lg border border-red-200">
+                    <input type="checkbox" id="is_urgent" class="w-4 h-4 text-red-600 rounded">
+                    <label for="is_urgent" class="text-xs font-bold text-red-700 cursor-pointer">🔥 Նշել որպես «ՇՏԱՊ ՎԱՃԱՌՔ» (կերևա ամենավերևում)</label>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm transition shadow mt-2">Հրապարակել հայտարարությունը</button>
+
+                <!-- Gallery Multi-Image Upload -->
+                <div class="bg-gray-50 p-3 rounded-xl border border-dashed border-gray-300">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">📸 Նկարներ հեռախոսից (մինչև 5 նկար)</label>
+                    <input type="file" id="image-files" accept="image/*" multiple onchange="handleImageUpload(event)" class="w-full text-xs text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                    <div id="image-previews" class="flex gap-2 mt-2 overflow-x-auto"></div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm transition shadow mt-2">Հրապարակել հայտարարությունը</button>
             </form>
         </div>
     </div>
 
-    <!-- Script -->
     <script>
         const SUPABASE_URL = 'https://vstomgxtnfpskmvpumoe.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzdG9tZ3h0bmZwc2ttdnB1bW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0ODYxNTEsImV4cCI6MjExMDA2MjE1MX0.5cdwDFZI4FzjKofizdnMTUfYq3pJOcLsAQMA167GYco';
-
+        const SUPABASE_ANON_KEY = 'sb_publishable_O6ofF59zsRYtzrhsRuT1ig_B9k-ir7T';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allCars = [];
+        let currentCurrency = 'USD';
+        const USD_TO_AMD = 390;
+        let favorites = JSON.parse(localStorage.getItem('carspot_favorites')) || [];
+        let showOnlyFavorites = false;
+        let activeQuickFilter = 'all';
+        let uploadedImagesBase64 = [];
+        let isAdmin = false;
+        const ADMIN_SECRET = "2026"; // Ադմինի գաղտնաբառ
+
+        const DEFAULT_CAR_IMG = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80';
 
         async function initApp() {
             await fetchCars();
+            updateFavCount();
         }
 
         async function fetchCars() {
             const loading = document.getElementById('loading');
             try {
-                const { data, error } = await supabaseClient.from('cars').select('*');
+                const { data, error } = await supabaseClient.from('cars').select('*').order('id', { ascending: false });
                 if (error) throw error;
-                
                 if (loading) loading.style.display = 'none';
                 allCars = data || [];
-                renderCars(allCars);
+                applyFilters();
             } catch (err) {
                 if (loading) {
-                    loading.innerHTML = `<p class="text-red-500">Բազայի սխալ կամ աղյուսակը չգտնվեց: <br><span class="text-xs text-gray-600">${err.message}</span></p>`;
+                    loading.innerHTML = `<p class="text-red-500">Բազայի սխալ: <br><span class="text-xs text-gray-600">${err.message}</span></p>`;
                 }
             }
+        }
+
+        // Admin Mode Toggle
+        function toggleAdminMode() {
+            if (isAdmin) {
+                isAdmin = false;
+                document.getElementById('admin-footer-btn').style.opacity = '0.4';
+                alert("Դուք դուրս եկաք Ադմին ռեժիմից");
+                applyFilters();
+                return;
+            }
+
+            const pass = prompt("Մուտքագրեք Ադմինի գաղտնաբառը․");
+            if (pass === ADMIN_SECRET) {
+                isAdmin = true;
+                document.getElementById('admin-footer-btn').style.opacity = '1';
+                alert("Բարի գալուստ, Ադմին։ Այժմ կարող եք ջնջել ցանկացած հայտարարություն։");
+                applyFilters();
+            } else if (pass !== null) {
+                alert("Սխալ գաղտնաբառ։");
+            }
+        }
+
+        // Admin Delete Car
+        async function adminDeleteCar(carId, title) {
+            if (!isAdmin) return;
+            if (!confirm(`Հաստա՞տ ուզում եք ջնջել այս հայտարարությունը (${title})։`)) return;
+
+            const { error } = await supabaseClient.from('cars').delete().eq('id', carId);
+            if (error) {
+                alert("Սխալ տեղի ունեցավ ջնջելիս: " + error.message);
+            } else {
+                alert("Հայտարարությունը հաջողությամբ ջնջվեց։");
+                closeDetailsModal();
+                fetchCars();
+            }
+        }
+
+        function getCarImages(imageField) {
+            if (!imageField) return [DEFAULT_CAR_IMG];
+            try {
+                if (imageField.startsWith('[')) {
+                    const arr = JSON.parse(imageField);
+                    return arr.length > 0 ? arr : [DEFAULT_CAR_IMG];
+                }
+            } catch (e) {}
+            return [imageField];
+        }
+
+        function handleImageUpload(event) {
+            const files = Array.from(event.target.files).slice(0, 5);
+            uploadedImagesBase64 = [];
+            const previewContainer = document.getElementById('image-previews');
+            previewContainer.innerHTML = '<span class="text-xs text-blue-600">Նկարները մշակվում են...</span>';
+
+            let processedCount = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = img.width > MAX_WIDTH ? MAX_WIDTH : img.width;
+                        canvas.height = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                        uploadedImagesBase64.push(compressedDataUrl);
+
+                        processedCount++;
+                        if (processedCount === files.length) {
+                            renderImagePreviews();
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderImagePreviews() {
+            const previewContainer = document.getElementById('image-previews');
+            previewContainer.innerHTML = uploadedImagesBase64.map(src => 
+                `<img src="${src}" class="w-16 h-16 object-cover rounded-lg border border-gray-300 flex-shrink-0">`
+            ).join('');
+        }
+
+        function formatPrice(priceUSD) {
+            if (!priceUSD && priceUSD !== 0) return 'Գինը համաձայնությամբ';
+            if (currentCurrency === 'AMD') {
+                return (priceUSD * USD_TO_AMD).toLocaleString() + ' ֏';
+            }
+            return priceUSD.toLocaleString() + ' $';
+        }
+
+        function toggleCurrency() {
+            currentCurrency = currentCurrency === 'USD' ? 'AMD' : 'USD';
+            document.getElementById('currency-btn').innerText = currentCurrency === 'USD' ? '💵 USD ($)' : '🇦🇲 AMD (֏)';
+            applyFilters();
+        }
+
+        function toggleFavorite(event, carId) {
+            event.stopPropagation();
+            if (favorites.includes(carId)) {
+                favorites = favorites.filter(id => id !== carId);
+            } else {
+                favorites.push(carId);
+            }
+            localStorage.setItem('carspot_favorites', JSON.stringify(favorites));
+            updateFavCount();
+            applyFilters();
+        }
+
+        function updateFavCount() {
+            document.getElementById('fav-count').innerText = favorites.length;
+        }
+
+        function toggleFavoritesView() {
+            showOnlyFavorites = !showOnlyFavorites;
+            const btn = document.getElementById('fav-toggle-btn');
+            if (showOnlyFavorites) {
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                btn.classList.remove('bg-blue-700', 'hover:bg-blue-800');
+            } else {
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                btn.classList.add('bg-blue-700', 'hover:bg-blue-800');
+            }
+            applyFilters();
+        }
+
+        function quickFilter(type) {
+            activeQuickFilter = type;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const cityFilter = document.getElementById('city-filter').value;
+            const sortType = document.getElementById('sort-filter').value;
+
+            let filtered = allCars.filter(car => {
+                const matchTitle = (car.title || '').toLowerCase().includes(searchText);
+                const matchCity = cityFilter === '' || car.location === cityFilter;
+                const matchFav = !showOnlyFavorites || favorites.includes(car.id);
+                
+                let matchQuick = true;
+                if (activeQuickFilter === 'urgent') matchQuick = car.is_urgent === true;
+                if (activeQuickFilter === 'under5k') matchQuick = (car.price || 0) <= 5000;
+                if (activeQuickFilter === 'under10k') matchQuick = (car.price || 0) <= 10000;
+                if (activeQuickFilter === 'hybrid') matchQuick = (car.engine || '').toLowerCase().includes('հիբրիդ') || (car.engine || '').toLowerCase().includes('գազ');
+
+                return matchTitle && matchCity && matchFav && matchQuick;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortType === 'price_asc') return (a.price || 0) - (b.price || 0);
+                if (sortType === 'price_desc') return (b.price || 0) - (a.price || 0);
+                if (sortType === 'year_desc') return (b.year || 0) - (a.year || 0);
+                if (a.is_urgent && !b.is_urgent) return -1;
+                if (!a.is_urgent && b.is_urgent) return 1;
+                return b.id - a.id;
+            });
+
+            renderCars(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('city-filter').value = '';
+            document.getElementById('sort-filter').value = 'newest';
+            showOnlyFavorites = false;
+            activeQuickFilter = 'all';
+            applyFilters();
         }
 
         function renderCars(cars) {
@@ -170,65 +403,126 @@
             if (!container) return;
             
             if (cars.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-12 text-lg">Առայժմ հայտարարություններ չկան: Սեղմեք «+ Ավելացնել մեքենա» վերևում և ավելացրեք առաջինը։</p>';
+                container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-12 text-lg">Հայտարարություններ չկան այս բաժնում։</p>';
                 return;
             }
             
-            container.innerHTML = cars.map((car, index) => `
-                <div onclick="openDetails(${index})" class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition cursor-pointer flex flex-col justify-between">
-                    <img src="${car.image || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80'}" alt="${car.title || 'Մեքենա'}" class="w-full h-48 object-cover">
-                    <div class="p-4 flex-grow">
-                        <h3 class="text-lg font-bold text-gray-800 truncate">${car.title || 'Անհայտ մոդել'}</h3>
-                        <p class="text-2xl font-extrabold text-blue-600 mt-1">${car.price ? car.price.toLocaleString() + ' $' : 'Գինը համաձայնությամբ'}</p>
-                        <div class="text-xs text-gray-600 mt-2 space-y-1 bg-gray-50 p-2.5 rounded-lg">
-                            <p>📅 Տարեթիվ: <strong>${car.year || '-'}</strong></p>
-                            <p>📍 Քաղաք: <strong>${car.location || 'Նշված չէ'}</strong></p>
-                            <p>⚙️ Շարժիչ: <strong>${car.engine || '-'}</strong></p>
-                            <p>🛣️ Վազք: <strong>${car.mileage ? car.mileage.toLocaleString() + ' կմ' : '-'}</strong></p>
+            container.innerHTML = cars.map((car) => {
+                const isFav = favorites.includes(car.id);
+                const images = getCarImages(car.image);
+                return `
+                    <div onclick="openDetails(${car.id})" class="bg-white rounded-xl shadow-md overflow-hidden border ${car.is_urgent ? 'border-red-400 ring-1 ring-red-300' : 'border-gray-200'} hover:shadow-xl transition cursor-pointer flex flex-col justify-between relative">
+                        ${car.is_urgent ? '<span class="absolute top-3 left-3 bg-red-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow">🔥 ՇՏԱՊ</span>' : ''}
+                        <button onclick="toggleFavorite(event, ${car.id})" class="absolute top-3 right-3 bg-white/85 hover:bg-white p-2 rounded-full shadow transition text-base">
+                            ${isFav ? '❤️' : '🤍'}
+                        </button>
+                        ${images.length > 1 ? `<span class="absolute top-40 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md">📸 ${images.length}</span>` : ''}
+                        <img src="${images[0]}" alt="${car.title || 'Մեքենա'}" class="w-full h-48 object-cover">
+                        <div class="p-4 flex-grow">
+                            <h3 class="text-lg font-bold text-gray-800 truncate">${car.title || 'Անհայտ մոդել'}</h3>
+                            <p class="text-2xl font-extrabold text-blue-600 mt-1">${formatPrice(car.price)}</p>
+                            <div class="text-xs text-gray-600 mt-2 space-y-1 bg-gray-50 p-2.5 rounded-lg">
+                                <p>📅 Տարեթիվ: <strong>${car.year || '-'}</strong></p>
+                                <p>📍 Քաղաք: <strong>${car.location || 'Նշված չէ'}</strong></p>
+                                <p>⚙️ Շարժիչ: <strong>${car.engine || '-'}</strong></p>
+                                <div class="flex justify-between items-center pt-1 border-t border-gray-200">
+                                    <span>🛣️ ${car.mileage ? car.mileage.toLocaleString() + ' կմ' : '-'}</span>
+                                    <span class="text-gray-500">👁️ ${car.views || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-4 pb-3 pt-2 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <span class="text-xs text-gray-500">Հեռ: ${car.phone || 'Նշված չէ'}</span>
+                            ${isAdmin ? `
+                                <button onclick="event.stopPropagation(); adminDeleteCar(${car.id}, '${car.title}')" class="bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-red-700 transition">🗑️ Ջնջել (Ադմին)</button>
+                            ` : `
+                                <span class="text-blue-600 text-xs font-semibold hover:underline">Մանրամասն &rarr;</span>
+                            `}
                         </div>
                     </div>
-                    <div class="px-4 pb-3 pt-2 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <span class="text-xs text-gray-500">Հեռ: ${car.phone || 'Նշված չէ'}</span>
-                        <span class="text-blue-600 text-xs font-semibold hover:underline">Մանրամասն &rarr;</span>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        function applyFilters() {
-            const searchText = document.getElementById('search-input').value.toLowerCase();
-            const cityFilter = document.getElementById('city-filter').value;
-
-            let filtered = allCars.filter(car => {
-                const matchTitle = (car.title || '').toLowerCase().includes(searchText);
-                const matchCity = cityFilter === '' || car.location === cityFilter;
-                return matchTitle && matchCity;
-            });
-            renderCars(filtered);
+        function switchMainPhoto(src) {
+            document.getElementById('detail-main-img').src = src;
         }
 
-        function openDetails(index) {
-            const car = allCars[index];
+        async function incrementCarViews(carId) {
+            try {
+                await supabaseClient.rpc('increment_views', { car_id: carId });
+            } catch (e) {
+                console.error("Views error:", e);
+            }
+        }
+
+        function shareCar(title, price) {
+            const shareText = `🚗 ${title} — ${price}\nԴիտել CarSpot-Arm կայքում՝ ${window.location.href}`;
+            if (navigator.share) {
+                navigator.share({ title: title, text: shareText, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert('Հայտարարության տվյալներն ու հղումը պատճենվեցին։');
+            }
+        }
+
+        async function openDetails(carId) {
+            const car = allCars.find(c => c.id === carId);
             if (!car) return;
             
+            await incrementCarViews(carId);
+            car.views = (car.views || 0) + 1;
+
             const priceUSD = car.price || 10000;
             const defaultDownPayment = priceUSD * 0.2; 
+            const cleanPhone = (car.phone || '').replace(/[^0-9+]/g, '');
+            const images = getCarImages(car.image);
+
+            const similarCars = allCars.filter(c => c.id !== car.id && (c.location === car.location || Math.abs((c.price || 0) - priceUSD) < 3000)).slice(0, 3);
 
             document.getElementById('modal-details-content').innerHTML = `
-                <img src="${car.image || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80'}" class="w-full h-64 object-cover rounded-xl mb-3 shadow">
-                <h2 class="text-xl font-bold text-gray-800 mb-1">${car.title}</h2>
-                <p class="text-2xl font-black text-blue-600 mb-3">${car.price ? car.price.toLocaleString() + ' $' : 'Գինը համաձայնությամբ'}</p>
+                <div class="relative">
+                    ${car.is_urgent ? '<span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow">🔥 ՇՏԱՊ ՎԱՃԱՌՔ</span>' : ''}
+                    <img id="detail-main-img" src="${images[0]}" class="w-full h-64 object-cover rounded-xl mb-2 shadow">
+                </div>
                 
-                <div class="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl text-gray-700 mb-4 text-xs">
+                ${images.length > 1 ? `
+                    <div class="flex gap-2 overflow-x-auto pb-2 mb-2">
+                        ${images.map(img => `<img src="${img}" onclick="switchMainPhoto('${img}')" class="w-16 h-12 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-blue-600">`).join('')}
+                    </div>
+                ` : ''}
+
+                <div class="flex justify-between items-start gap-2 mb-2">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">${car.title}</h2>
+                        <p class="text-2xl font-black text-blue-600">${formatPrice(car.price)}</p>
+                    </div>
+                    <button onclick="shareCar('${car.title}', '${formatPrice(car.price)}')" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-xl text-xs font-bold border border-blue-200 flex items-center gap-1">
+                        🔗 Կիսվել
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl text-gray-700 mb-3 text-xs">
                     <p>📅 Տարեթիվ՝ <strong>${car.year || '-'}</strong></p>
                     <p>📍 Քաղաք՝ <strong>${car.location || '-'}</strong></p>
                     <p>⚙️ Շարժիչ՝ <strong>${car.engine || '-'}</strong></p>
                     <p>🕹️ Փոխ․ տուփ՝ <strong>${car.transmission || '-'}</strong></p>
                     <p>🛞 Ղեկ՝ <strong>${car.steering_wheel || '-'}</strong></p>
                     <p>🛣️ Վազք՝ <strong>${car.mileage ? car.mileage.toLocaleString() + ' կմ' : '-'}</strong></p>
+                    <p class="col-span-2">👁️ Դիտումների քանակ՝ <strong>${car.views || 0}</strong> անգամ</p>
                 </div>
 
-                <!-- Loan Calculator Section -->
+                ${car.vin ? `
+                    <div class="bg-gray-100 border border-gray-200 p-2.5 rounded-xl mb-3 flex items-center justify-between text-xs">
+                        <div>
+                            <span class="text-gray-500 font-semibold">VIN Կոդ:</span> 
+                            <strong class="font-mono text-gray-800">${car.vin}</strong>
+                        </div>
+                        <a href="https://www.carfax.com/s/vin-check?vin=${car.vin}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold transition">Ստուգել VIN-ը &rarr;</a>
+                    </div>
+                ` : ''}
+
+                <!-- Loan Calculator -->
                 <div class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl mb-4">
                     <h4 class="font-bold text-blue-900 text-sm mb-2">💳 Ավտովարկավորման Հաշվիչ</h4>
                     <div class="grid grid-cols-2 gap-3 text-xs mb-2">
@@ -239,59 +533,123 @@
                         <div>
                             <label class="block text-gray-600 mb-1">Ժամկետ (ամիս)</label>
                             <select id="calc-months" onchange="calculateLoan(${priceUSD})" class="w-full border rounded p-1.5 bg-white">
-                                <option value="12">12 ամիս (1 տարի)</option>
-                                <option value="24">24 ամիս (2 տարի)</option>
-                                <option value="36">36 ամիս (3 տարի)</option>
-                                <option value="48" selected>48 ամիս (4 տարի)</option>
-                                <option value="60">60 ամիս (5 տարի)</option>
+                                <option value="12">12 ամիս</option>
+                                <option value="24">24 ամիս</option>
+                                <option value="36">36 ամիս</option>
+                                <option value="48" selected>48 ամիս</option>
+                                <option value="60">60 ամիս</option>
                             </select>
                         </div>
                     </div>
-                    <div class="text-right font-bold text-blue-700 text-sm" id="calc-result">
-                        Մոտավոր ամսական վճար՝ <strong>Հաշվարկվում է...</strong>
+                    <div class="text-right font-bold text-blue-700 text-sm" id="calc-result"></div>
+                </div>
+
+                <!-- Direct Communication Buttons -->
+                <div class="bg-gray-100 p-3.5 rounded-xl mb-4 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-semibold">Վաճառողի հեռախոս</p>
+                            <p class="text-base font-bold text-gray-800">${car.phone || 'Նշված չէ'}</p>
+                        </div>
+                        <a href="tel:${cleanPhone}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition">📞 Զանգահարել</a>
+                    </div>
+                    <div class="flex gap-2 pt-2 border-t border-gray-200">
+                        <a href="https://wa.me/${cleanPhone}?text=Բարեւ ձեզ, հետաքրքրում է ձեր մեքենան՝ ${car.title}" target="_blank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-center py-2 rounded-xl text-xs font-bold transition">💬 WhatsApp</a>
+                        <a href="viber://chat?number=${cleanPhone}" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center py-2 rounded-xl text-xs font-bold transition">💜 Viber</a>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between bg-gray-100 p-3 rounded-xl mb-4">
-                    <div>
-                        <p class="text-[10px] text-gray-500 uppercase font-semibold">Վաճառողի հեռախոս</p>
-                        <p class="text-base font-bold text-gray-800">${car.phone || 'Նշված չէ'}</p>
+                <!-- Similar Cars -->
+                ${similarCars.length > 0 ? `
+                    <div class="mb-4">
+                        <h4 class="font-bold text-gray-800 text-sm mb-2">🚗 Նմանատիպ հայտարարություններ</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                            ${similarCars.map(sc => {
+                                const scImg = getCarImages(sc.image)[0];
+                                return `
+                                    <div onclick="openDetails(${sc.id})" class="bg-gray-50 p-2 rounded-xl border border-gray-200 cursor-pointer hover:shadow transition">
+                                        <img src="${scImg}" class="w-full h-20 object-cover rounded-lg mb-1">
+                                        <p class="text-xs font-bold truncate">${sc.title}</p>
+                                        <p class="text-xs text-blue-600 font-extrabold">${formatPrice(sc.price)}</p>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
-                    <a href="tel:${car.phone}" class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">📞 Զանգահարել</a>
-                </div>
+                ` : ''}
 
-                <!-- Delete Button with PIN -->
-                <div class="text-right border-t pt-3">
-                    <button onclick="promptDelete(${car.id || 'null'}, '${car.title}')" class="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-red-200">
-                        🗑️ Հեռացնել այս հայտարարությունը
+                <!-- Edit & Delete Buttons with PIN or Admin -->
+                <div class="flex justify-between items-center border-t pt-3 gap-2">
+                    <button onclick="promptEdit(${car.id})" class="bg-amber-50 hover:bg-amber-100 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold transition border border-amber-200">
+                        ✏️ Խմբագրել
                     </button>
+                    ${isAdmin ? `
+                        <button onclick="adminDeleteCar(${car.id}, '${car.title}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition">
+                            🗑️ Ջնջել (Ադմին)
+                        </button>
+                    ` : `
+                        <button onclick="promptDelete(${car.id}, '${car.title}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition border border-red-200">
+                            🗑️ Հեռացնել (PIN)
+                        </button>
+                    `}
                 </div>
             `;
             document.getElementById('detailsModal').classList.remove('hidden');
             document.getElementById('detailsModal').classList.add('flex');
             calculateLoan(priceUSD);
+            fetchCars();
+        }
+
+        function promptEdit(carId) {
+            const car = allCars.find(c => c.id === carId);
+            if (!car) return;
+
+            if (!isAdmin) {
+                const enteredPin = prompt(`Մուտքագրեք հայտարարության PIN կոդը խմբագրելու համար:`);
+                if (enteredPin === null) return;
+                if (car.pin && car.pin !== enteredPin) {
+                    alert('Սխալ PIN կոդ:');
+                    return;
+                }
+            }
+
+            closeDetailsModal();
+            document.getElementById('modal-form-title').innerText = 'Խմբագրել հայտարարությունը';
+            document.getElementById('submit-btn').innerText = 'Պահպանել փոփոխությունները';
+            document.getElementById('edit-car-id').value = car.id;
+            document.getElementById('title').value = car.title || '';
+            document.getElementById('price').value = car.price || '';
+            document.getElementById('year').value = car.year || '';
+            document.getElementById('location').value = car.location || 'Երևան';
+            document.getElementById('engine').value = car.engine || '';
+            document.getElementById('transmission').value = car.transmission || '';
+            document.getElementById('steering_wheel').value = car.steering_wheel || '';
+            document.getElementById('mileage').value = car.mileage || '';
+            document.getElementById('vin').value = car.vin || '';
+            document.getElementById('phone').value = car.phone || '';
+            document.getElementById('pin').value = car.pin || '';
+            document.getElementById('is_urgent').checked = car.is_urgent === true;
+
+            uploadedImagesBase64 = getCarImages(car.image);
+            renderImagePreviews();
+
+            document.getElementById('carModal').classList.remove('hidden');
+            document.getElementById('carModal').classList.add('flex');
         }
 
         async function promptDelete(carId, title) {
             const enteredPin = prompt(`Մուտքագրեք այս հայտարարության PIN կոդը (${title}) ջնջելու համար:`);
             if (enteredPin === null) return; 
 
-            const { data, error: fetchError } = await supabaseClient.from('cars').select('*').eq('title', title);
-            
-            if (fetchError || !data || data.length === 0) {
-                alert('Հայտարարությունը չգտնվեց:');
-                return;
-            }
-
-            const carToDel = data[0];
+            const carToDel = allCars.find(c => c.id === carId);
+            if (!carToDel) return;
 
             if (carToDel.pin && carToDel.pin !== enteredPin) {
-                alert('Սխալ PIN կոդ: Դուք իրավունք չունեք ջնջել այս հայտարարությունը։');
+                alert('Սխալ PIN կոդ:');
                 return;
             }
 
-            const { error } = await supabaseClient.from('cars').delete().eq('id', carToDel.id);
-
+            const { error } = await supabaseClient.from('cars').delete().eq('id', carId);
             if (error) {
                 alert('Սխալ ջնջելիս: ' + error.message);
             } else {
@@ -305,16 +663,19 @@
             const downPayment = Number(document.getElementById('calc-down').value) || 0;
             const months = Number(document.getElementById('calc-months').value) || 36;
             const loanAmount = Math.max(0, carPrice - downPayment);
-            const annualRate = 0.13; 
-            const monthlyRate = annualRate / 12;
+            const monthlyRate = 0.13 / 12;
 
             if (loanAmount <= 0) {
-                document.getElementById('calc-result').innerHTML = `Ամսական վճար՝ <strong>0 $ (Ամբողջությամբ մարված է)</strong>`;
+                document.getElementById('calc-result').innerHTML = `Ամսական վճար՝ <strong>0 $</strong>`;
                 return;
             }
 
             const monthlyPayment = (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
-            document.getElementById('calc-result').innerHTML = `Մոտավոր ամսական վճար՝ <span class="text-lg text-blue-800 font-extrabold">${Math.round(monthlyPayment).toLocaleString()} $</span> / ամիս`;
+            if (currentCurrency === 'AMD') {
+                document.getElementById('calc-result').innerHTML = `Մոտավոր ամսական վճար՝ <span class="text-base text-blue-800 font-extrabold">${(Math.round(monthlyPayment) * USD_TO_AMD).toLocaleString()} ֏</span> / ամիս`;
+            } else {
+                document.getElementById('calc-result').innerHTML = `Մոտավոր ամսական վճար՝ <span class="text-base text-blue-800 font-extrabold">${Math.round(monthlyPayment).toLocaleString()} $</span> / ամիս`;
+            }
         }
 
         function closeDetailsModal() {
@@ -323,6 +684,12 @@
         }
 
         function openAddModal() {
+            document.getElementById('carForm').reset();
+            document.getElementById('edit-car-id').value = '';
+            document.getElementById('modal-form-title').innerText = 'Նոր մեքենայի հայտարարություն';
+            document.getElementById('submit-btn').innerText = 'Հրապարակել հայտարարությունը';
+            uploadedImagesBase64 = [];
+            document.getElementById('image-previews').innerHTML = '';
             document.getElementById('carModal').classList.remove('hidden');
             document.getElementById('carModal').classList.add('flex');
         }
@@ -332,12 +699,16 @@
             document.getElementById('carModal').classList.add('hidden');
         }
 
-        async function addCar(e) {
+        async function saveCar(e) {
             e.preventDefault();
-            const imageUrlInput = document.getElementById('image').value.trim();
-            const defaultCarImage = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80';
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Պահպանվում է...';
 
-            const newCar = {
+            const editId = document.getElementById('edit-car-id').value;
+            const finalImages = uploadedImagesBase64.length > 0 ? JSON.stringify(uploadedImagesBase64) : DEFAULT_CAR_IMG;
+
+            const carData = {
                 title: document.getElementById('title').value,
                 price: Number(document.getElementById('price').value),
                 year: Number(document.getElementById('year').value),
@@ -346,14 +717,30 @@
                 transmission: document.getElementById('transmission').value,
                 steering_wheel: document.getElementById('steering_wheel').value,
                 mileage: Number(document.getElementById('mileage').value),
+                vin: document.getElementById('vin').value.trim().toUpperCase(),
                 phone: document.getElementById('phone').value,
                 pin: document.getElementById('pin').value,
-                image: imageUrlInput !== '' ? imageUrlInput : defaultCarImage
+                is_urgent: document.getElementById('is_urgent').checked,
+                image: finalImages
             };
 
-            const { error } = await supabaseClient.from('cars').insert([newCar]);
-            if (error) { alert('Սխալ հայտարարություն ավելացնելիս: ' + error.message); } 
-            else { alert('Հայտարարությունը հաջողությամբ հրապարակվեց!'); document.getElementById('carForm').reset(); closeAddModal(); fetchCars(); }
+            let error;
+            if (editId) {
+                const res = await supabaseClient.from('cars').update(carData).eq('id', Number(editId));
+                error = res.error;
+            } else {
+                const res = await supabaseClient.from('cars').insert([carData]);
+                error = res.error;
+            }
+
+            submitBtn.disabled = false;
+            if (error) {
+                alert('Սխալ պահպանելիս: ' + error.message);
+            } else {
+                alert(editId ? 'Հայտարարությունը թարմացվեց!' : 'Հայտարարությունը հրապարակվեց!');
+                closeAddModal();
+                fetchCars();
+            }
         }
 
         initApp();
